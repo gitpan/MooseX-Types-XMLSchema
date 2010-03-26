@@ -63,7 +63,7 @@ MooseX::Types::XMLSchema - XMLSchema compatible Moose types library
 
 =cut
 
-our $VERSION = '0.01_1';
+our $VERSION = '0.02';
 
 
 =head1 SYNOPSIS
@@ -116,9 +116,8 @@ our $VERSION = '0.01_1';
     has 'nonNegativeInteger' => ( is => 'rw', isa => 'xs:nonNegativeInteger' );
     has 'negativeInteger'    => ( is => 'rw', isa => 'xs:negativeInteger' );
 
+Then, elsewhere:
 
-
-    # Then, elsewhere:
     my $object = My::Class->new(
         string          => 'string',
         decimal         => 20.12,
@@ -740,9 +739,6 @@ Alex J. G. Burzyński, C<< <ajgb at cpan.org> >>
 Please report any bugs or feature requests to C<bug-moosex-types-xmlschema at rt.cpan.org>, or through
 the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=MooseX-Types-XMLSchema>.  I will be notified, and then you'll
 automatically be notified of progress on your bug as I make changes.
-
-
-=head1 ACKNOWLEDGEMENTS
 
 
 =head1 COPYRIGHT & LICENSE
