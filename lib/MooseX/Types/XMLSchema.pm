@@ -51,6 +51,7 @@ use Regexp::Common qw( number );
 use MIME::Base64 qw( encode_base64 );
 use Encode qw( encode );
 use DateTime::Duration;
+use DateTime::TimeZone;
 use DateTime;
 use IO::Handle;
 use URI;
@@ -63,7 +64,7 @@ MooseX::Types::XMLSchema - XMLSchema compatible Moose types library
 
 =cut
 
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 
 
 =head1 SYNOPSIS
@@ -405,7 +406,7 @@ If you enable coerce you can pass a DateTime::Duration object.
 
 subtype 'xs:duration' =>
     as 'Str' =>
-        where { /^\-?P\d+Y\d+M\d+DT\d+H\d+M\d+S$/ };
+        where { /^\-?P\d+Y\d+M\d+DT\d+H\d+M\d+(?:\.\d+)?S$/ };
 
 coerce 'xs:duration'
     => from 'DateTime::Duration' =>
@@ -415,7 +416,15 @@ coerce 'xs:duration'
                 $is_negative = 1;
                 $_ = $_->inverse;
             }
-            return sprintf('%sP%dY%dM%dDT%dH%dM%dS',
+            my ($s, $ns) = $_->in_units(qw(
+                seconds
+                nanoseconds
+            ));
+            if ( int($ns) ) {
+                $s = sprintf("%d.%09d", $s, $ns);
+                $s =~ s/0+$//;
+            }
+            return sprintf('%sP%dY%dM%dDT%dH%dM%sS',
                 $is_negative ? '-' : '',
                 $_->in_units(qw(
                     years
@@ -423,8 +432,8 @@ coerce 'xs:duration'
                     days
                     hours
                     minutes
-                    seconds
-                ))
+                )),
+                $s
             );
         };
 
@@ -441,17 +450,23 @@ If you enable coerce you can pass a DateTime object.
 
 subtype 'xs:dateTime' =>
     as 'Str' =>
-        where { /^\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}Z?(?:[\-\+]\d{2}:?\d{2})?$/ };
+        where { /^\-?\d{4}\-\d{2}\-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?(?:[\-\+]\d{2}:?\d{2})?$/ };
 
 coerce 'xs:dateTime'
     => from 'DateTime' =>
         via {
-            my $tz = $_->strftime("%z");
-            if ($tz) {
-                $tz =~ s/^[\-\+]0000$/Z/ or
-                    $tz =~ s/^([\-\+]\d{2})(\d{2})$/$1:$2/;
+            my $datetime = $_->strftime( $_->nanosecond ? "%FT%T.%N" : "%FT%T");
+            $datetime =~ s/0+$// if $_->nanosecond;
+            my $tz = $_->time_zone;
+
+            return $datetime if $tz->is_floating;
+            return $datetime .'Z' if $tz->is_utc;
+
+            if ( DateTime::TimeZone->offset_as_string($_->offset) =~
+                /^([\+\-]\d{2})(\d{2})/ ) {
+                return "$datetime$1:$2";
             }
-            return $_->strftime("%FT%T$tz");
+            return $datetime;
         };
 
 
@@ -467,17 +482,23 @@ If you enable coerce you can pass a DateTime object.
 
 subtype 'xs:time' =>
     as 'Str' =>
-        where { /^\d{2}:\d{2}:\d{2}Z?(?:[\-\+]\d{2}:?\d{2})?$/ };
+        where { /^\d{2}:\d{2}:\d{2}(?:\.\d+)?Z?(?:[\-\+]\d{2}:?\d{2})?$/ };
 
 coerce 'xs:time'
     => from 'DateTime' =>
         via {
-            my $tz = $_->strftime("%z");
-            if ($tz) {
-                $tz =~ s/^[\-\+]0000$/Z/ or
-                    $tz =~ s/^([\-\+]\d{2})(\d{2})$/$1:$2/;
+            my $time = $_->strftime( $_->nanosecond ? "%T.%N" : "%T");
+            $time =~ s/0+$// if $_->nanosecond;
+            my $tz = $_->time_zone;
+
+            return $time if $tz->is_floating;
+            return $time .'Z' if $tz->is_utc;
+
+            if ( DateTime::TimeZone->offset_as_string($_->offset) =~
+                /^([\+\-]\d{2})(\d{2})/ ) {
+                return "$time$1:$2";
             }
-            return $_->strftime("%T$tz");
+            return $time;
         };
 
 
@@ -643,7 +664,7 @@ file will be encoded to UTF-8 before encoding with base64.
 
 subtype 'xs:base64Binary' =>
     as 'Str' =>
-        where { $_ =~ /^[a-zA-Z0-9=\+]+$/m };
+        where { $_ =~ /^[a-zA-Z0-9=\+\/]+$/m };
 
 coerce 'xs:base64Binary'
     => from 'IO::Handle' =>
