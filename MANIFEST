@@ -1,11 +1,22 @@
+Build.PL
 Changes
+INSTALL
+LICENSE
 MANIFEST
-MANIFEST.SKIP
+META.json
+META.yml
 Makefile.PL
 README
+dist.ini
 lib/MooseX/Types/XMLSchema.pm
+t/00-compile.t
 t/00-load.t
+t/moosex-types-xmlschema.t
 t/pod-coverage.t
 t/pod.t
-t/moosex-types-xmlschema.t
-META.yml                                 Module meta-data (added by MakeMaker)
+t/release-eol.t
+t/release-kwalitee.t
+t/release-no-tabs.t
+t/release-pod-coverage.t
+t/release-pod-syntax.t
+t/release-portability.t
