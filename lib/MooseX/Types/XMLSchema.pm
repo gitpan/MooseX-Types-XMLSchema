@@ -2,6 +2,9 @@ package MooseX::Types::XMLSchema;
 BEGIN {
   $MooseX::Types::XMLSchema::AUTHORITY = 'cpan:AJGB';
 }
+{
+  $MooseX::Types::XMLSchema::VERSION = '0.05';
+}
 
 use warnings;
 use strict;
@@ -65,11 +68,6 @@ use Math::BigFloat;
 =head1 NAME
 
 MooseX::Types::XMLSchema - XMLSchema compatible Moose types library
-
-=cut
-
-our $VERSION = '0.04';
-
 
 =head1 SYNOPSIS
 
@@ -518,12 +516,23 @@ If you enable coerce you can pass a DateTime object.
 
 subtype 'xs:date' =>
     as 'Str' =>
-        where { /^\d{4}\-\d{2}\-\d{2}$/ };
+        where { /^\-?\d{4}\-\d{2}\-\d{2}Z?(?:[\-\+]\d{2}:?\d{2})?$/ };
 
 coerce 'xs:date'
     => from 'DateTime' =>
         via {
-            return $_->strftime("%F");
+            my $date = $_->strftime("%F");
+            my $tz = $_->time_zone;
+
+            return $date if $tz->is_floating;
+            return $date .'Z' if $tz->is_utc;
+
+            if ( DateTime::TimeZone->offset_as_string($_->offset) =~
+                /^([\+\-]\d{2})(\d{2})/ ) {
+                return "$date$1:$2";
+            }
+            return $date;
+
         };
 
 

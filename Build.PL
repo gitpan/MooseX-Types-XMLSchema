@@ -24,7 +24,7 @@ my %module_build_args = (
     "Alex J. G. Burzy\305\204ski <ajgb\@cpan.org>"
   ],
   "dist_name" => "MooseX-Types-XMLSchema",
-  "dist_version" => "0.04",
+  "dist_version" => "0.05",
   "license" => "perl",
   "module_name" => "MooseX::Types::XMLSchema",
   "recommends" => {},
