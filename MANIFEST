@@ -18,4 +18,3 @@ xt/release/kwalitee.t
 xt/release/no-tabs.t
 xt/release/pod-coverage.t
 xt/release/pod-syntax.t
-xt/release/portability.t

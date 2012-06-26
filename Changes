@@ -1,5 +1,17 @@
 Revision history for MooseX-Types-XMLSchema
 
+0.06   2012-06-26 01:13:22
+    FIXES:
+        [rt#77879] Fix typo in xs:dateTime pod.
+    ENHANCEMENTS:
+        Add missing types in synopsis.
+        Add more tests.
+        All Math::BigInt/BigFloat objects also coerce from Str.
+    NOTICES:
+       xs:positiveInteger, xs:nonPositiveInteger, xs:negativeInteger,
+       xs:nonNegativeInteger are Math::BigInt objects now (due to removing
+       their duplicated versions).  
+
 0.05   2012-06-16 00:54:18
     [rt#77810/gh#1] Allow timezone in xs:date string by IVANWILLS
     Coerced DateTime object will include timezone in xs:date

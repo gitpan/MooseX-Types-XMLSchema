@@ -3,8 +3,9 @@ BEGIN {
   $MooseX::Types::XMLSchema::AUTHORITY = 'cpan:AJGB';
 }
 {
-  $MooseX::Types::XMLSchema::VERSION = '0.05';
+  $MooseX::Types::XMLSchema::VERSION = '0.06';
 }
+#ABSTRACT: XMLSchema compatible Moose types library
 
 use warnings;
 use strict;
@@ -39,10 +40,6 @@ use MooseX::Types -declare => [qw(
     xs:gMonth
     xs:base64Binary
     xs:anyURI
-    xs:nonPositiveInteger
-    xs:negativeInteger
-    xs:nonNegativeInteger
-    xs:positiveInteger
 )];
 use Moose::Util::TypeConstraints;
 use MooseX::Types::Moose qw(
@@ -65,71 +62,6 @@ use Math::BigInt;
 use Math::BigFloat;
 
 
-=head1 NAME
-
-MooseX::Types::XMLSchema - XMLSchema compatible Moose types library
-
-=head1 SYNOPSIS
-
-    package My::Class;
-    use Moose;
-    use MooseX::Types::XMLSchema qw( :all );
-
-    has 'string'       => ( is => 'rw', isa => 'xs:string' );
-    has 'int'          => ( is => 'rw', isa => 'xs:int' );
-    has 'integer'      => ( is => 'rw', isa => 'xs:integer' );
-    has 'boolean'      => ( is => 'rw', isa => 'xs:boolean' );
-    has 'float'        => ( is => 'rw', isa => 'xs:float' );
-    has 'double'       => ( is => 'rw', isa => 'xs:double' );
-    has 'decimal'      => ( is => 'rw', isa => 'xs:decimal' );
-
-    has 'integer_co'   => ( is => 'rw', isa => 'xs:integer', coerce => 1 );
-    has 'float_co'     => ( is => 'rw', isa => 'xs:float', coerce => 1 );
-    has 'double_co'    => ( is => 'rw', isa => 'xs:double', coerce => 1 );
-    has 'decimal_co'   => ( is => 'rw', isa => 'xs:decimal', coerce => 1 );
-
-    has 'duration'     => ( is => 'rw', isa => 'xs:duration' );
-    has 'datetime'     => ( is => 'rw', isa => 'xs:dateTime' );
-    has 'time'         => ( is => 'rw', isa => 'xs:time' );
-    has 'date'         => ( is => 'rw', isa => 'xs:date' );
-    has 'gYearMonth'   => ( is => 'rw', isa => 'xs:gYearMonth' );
-    has 'gYear'        => ( is => 'rw', isa => 'xs:gYear' );
-    has 'gMonthDay'    => ( is => 'rw', isa => 'xs:gMonthDay' );
-    has 'gDay'         => ( is => 'rw', isa => 'xs:gDay' );
-    has 'gMonth'       => ( is => 'rw', isa => 'xs:gMonth' );
-
-    has 'duration_dt'     => ( is => 'rw', isa => 'xs:duration', coerce => 1 );
-    has 'datetime_dt'     => ( is => 'rw', isa => 'xs:dateTime', coerce => 1 );
-    has 'time_dt'         => ( is => 'rw', isa => 'xs:time', coerce => 1 );
-    has 'date_dt'         => ( is => 'rw', isa => 'xs:date', coerce => 1 );
-    has 'gYearMonth_dt'   => ( is => 'rw', isa => 'xs:gYearMonth', coerce => 1 );
-    has 'gYear_dt'        => ( is => 'rw', isa => 'xs:gYear', coerce => 1 );
-    has 'gMonthDay_dt'    => ( is => 'rw', isa => 'xs:gMonthDay', coerce => 1 );
-    has 'gDay_dt'         => ( is => 'rw', isa => 'xs:gDay', coerce => 1 );
-    has 'gMonth_dt'       => ( is => 'rw', isa => 'xs:gMonth', coerce => 1 );
-
-    has 'base64Binary' => ( is => 'rw', isa => 'xs:base64Binary' );
-    has 'base64Binary_io' => ( is => 'rw', isa => 'xs:base64Binary', coerce => 1 );
-
-    has 'anyURI'       => ( is => 'rw', isa => 'xs:anyURI' );
-    has 'anyURI_uri'       => ( is => 'rw', isa => 'xs:anyURI', coerce => 1 );
-
-    has 'nonPositiveInteger' => ( is => 'rw', isa => 'xs:nonPositiveInteger' );
-    has 'positiveInteger'    => ( is => 'rw', isa => 'xs:positiveInteger' );
-    has 'nonNegativeInteger' => ( is => 'rw', isa => 'xs:nonNegativeInteger' );
-    has 'negativeInteger'    => ( is => 'rw', isa => 'xs:negativeInteger' );
-
-Then, elsewhere:
-
-    my $object = My::Class->new(
-        string          => 'string',
-        decimal         => Math::BigFloat->new(20.12),
-        duration_dt     => DateTime->now - DateTime->(year => 1990),
-        base64Binary_io => IO::File->new($0),
-    );
-
-=cut
-
 class_type 'Math::BigInt';
 class_type 'Math::BigFloat';
 class_type 'DateTime::Duration';
@@ -137,274 +69,143 @@ class_type 'DateTime';
 class_type 'IO::Handle';
 class_type 'URI';
 
-=head1 DESCRIPTION
-
-This class provides a number of XMLSchema compatible types for your Moose
-classes.
-
-=head1 TYPES
-
-=head2 xs:string
-
-    has 'string'       => ( is => 'rw', isa => 'xs:string' );
-
-A wrapper around built-in Str.
-
-=cut
 
 subtype 'xs:string' =>
     as 'Str';
 
 
-=head2 xs:integer
-
-    has 'integer'      => ( is => 'rw', isa => 'xs:integer', coerce => 1 );
-
-A L<Math::BigInt> object. Set to coerce from Int.
-
-This is defined in XSchema to be an arbitrary size integer.
-
-=cut
 
 subtype 'xs:integer' =>
     as 'Math::BigInt',
     where { ! $_->is_nan && ! $_->is_inf };
 
-coerce 'xs:integer' => from 'Int', via { Math::BigInt->new($_) };
+coerce 'xs:integer'
+    => from 'Int', via { Math::BigInt->new($_) }
+    => from 'Str', via { Math::BigInt->new($_) };
 
-=head2 xs:positiveInteger
-
-    has 'integer' => (
-        is => 'rw',
-        isa => 'xs:positiveInteger',
-        coerce => 1,
-    );
-
-A L<Math::BigInt> object. Set to coerce from Int.
-
-This is defined in XSchema to be an arbitrary size integer greater than zero.
-
-=cut
 
 subtype 'xs:positiveInteger' => as 'Math::BigInt', where { $_ > 0 };
-coerce 'xs:positiveInteger' => from 'Int', via { Math::BigInt->new($_) };
+coerce 'xs:positiveInteger'
+    => from 'Int', via { Math::BigInt->new($_) }
+    => from 'Str', via { Math::BigInt->new($_) };
 
-=head2 xs:nonPositiveInteger
-
-    has 'integer' => (
-        is => 'rw',
-        isa => 'xs:nonPositiveInteger',
-        coerce => 1,
-    );
-
-A L<Math::BigInt> object. Set to coerce from Int.
-
-This is defined in XSchema to be an arbitrary size integer less than or equal
-to zero.
-
-=cut
 
 subtype 'xs:nonPositiveInteger' => as 'Math::BigInt', where { $_ <= 0 };
-coerce 'xs:nonPositiveInteger' => from 'Int', via { Math::BigInt->new($_) };
+coerce 'xs:nonPositiveInteger'
+    => from 'Int', via { Math::BigInt->new($_) }
+    => from 'Str', via { Math::BigInt->new($_) };
 
-=head2 xs:negativeInteger
-
-    has 'integer' => (
-        is => 'rw',
-        isa => 'xs:negativeInteger',
-        coerce => 1,
-    );
-
-A L<Math::BigInt> object. Set to coerce from Int.
-
-This is defined in XSchema to be an arbitrary size integer less than zero.
-
-=cut
 
 subtype 'xs:negativeInteger' => as 'Math::BigInt', where { $_ < 0 };
-coerce 'xs:negativeInteger' => from 'Int', via { Math::BigInt->new($_) };
+coerce 'xs:negativeInteger'
+    => from 'Int', via { Math::BigInt->new($_) }
+    => from 'Str', via { Math::BigInt->new($_) };
 
-=head2 xs:nonNegativeInteger
-
-    has 'int' => ( is => 'rw', isa => 'xs:nonNegativeInteger' );
-
-
-A L<Math::BigInt> object. Set to coerce from Int.
-
-This is defined in XSchema to be an arbitrary size integer greater than or
-equal to zero.
-
-=cut
 
 subtype 'xs:nonNegativeInteger' =>
     as 'Math::BigInt',
         where { $_ >= 0 };
-coerce 'xs:nonNegativeInteger' => from 'Int', via { Math::BigInt->new($_) };
+coerce 'xs:nonNegativeInteger'
+    => from 'Int', via { Math::BigInt->new($_) }
+    => from 'Str', via { Math::BigInt->new($_) };
 
-=head2 xs:long
 
-    has 'long' => ( is => 'rw', isa => 'xs:long' );
+{
+    my $min = Math::BigInt->new('-9223372036854775808');
+    my $max = Math::BigInt->new('9223372036854775807');
 
-A 64-bit Integer. Represented as a L<Math::Bigint> object, but limited to the
-64-bit (signed) range. Set to coerce from Int.
+    subtype 'xs:long' =>
+        as 'Math::BigInt',
+            where { $_ <= $max && $_ >= $min };
+    coerce 'xs:long'
+        => from 'Int', via { Math::BigInt->new($_) }
+        => from 'Str', via { Math::BigInt->new($_) };
+}
 
-=cut
 
-subtype 'xs:long' =>
-    as 'Math::BigInt',
-        where { $_ <= 9223372036854775807 && $_ > -9223372036854775808 };
-coerce 'xs:long' => from 'Int', via { Math::BigInt->new($_) };
+{
+    my $max = Math::BigInt->new('18446744073709551615');
 
-=head2 xs:unsignedLong
+    subtype 'xs:unsignedLong' =>
+        as 'Math::BigInt',
+            where { $_ >= 0 && $_ <= $max };
+    coerce 'xs:unsignedLong'
+        => from 'Int', via { Math::BigInt->new($_) }
+        => from 'Str', via { Math::BigInt->new($_) };
+}
 
-    has 'long' => ( is => 'rw', isa => 'xs:unsignedLong' );
-
-A 64-bit Integer. Represented as a L<Math::Bigint> object, but limited to the
-64-bit (unsigned) range. Set to coerce from Int.
-
-=cut
-
-subtype 'xs:unsignedLong' =>
-    as 'Math::BigInt',
-        where { $_ >= 0 && $_ <= 18446744073709551615 };
-coerce 'xs:unsignedLong' => from 'Int', via { Math::BigInt->new($_) };
-
-=head2 xs:int
-
-    has 'int' => ( is => 'rw', isa => 'xs:int' );
-
-A 32-bit integer. Represented natively.
-
-=cut
 
 subtype 'xs:int' =>
     as 'Int',
         where { $_ <= 2147483647 && $_ >= -2147483648 };
 
-=head2 xs:unsignedInt
-
-    has 'int' => ( is => 'rw', isa => 'xs:unsignedInt' );
-
-A 32-bit integer. Represented natively.
-
-=cut
 
 subtype 'xs:unsignedInt' =>
     as 'Int',
         where { $_ <= 4294967295 && $_ >= 0};
 
-=head2 xs:short
-
-    has 'int' => ( is => 'rw', isa => 'xs:short' );
-
-A 16-bit integer. Represented natively.
-
-=cut
 
 subtype 'xs:short' =>
     as 'Int',
         where { $_ <= 32767 && $_ >= -32768 };
 
-=head2 xs:unsignedShort
-
-    has 'int' => ( is => 'rw', isa => 'xs:unsignedShort' );
-
-A 16-bit integer. Represented natively.
-
-=cut
 
 subtype 'xs:unsignedShort' =>
     as 'Int',
         where { $_ <= 65535 && $_ >= 0 };
 
-=head2 xs:byte
-
-    has 'int' => ( is => 'rw', isa => 'xs:byte' );
-
-An 8-bit integer. Represented natively.
-
-=cut
 
 subtype 'xs:byte' =>
     as 'Int',
         where { $_ <= 127 && $_ >= -128 };
 
-=head2 xs:unsignedByte
-
-    has 'int' => ( is => 'rw', isa => 'xs:unsignedByte' );
-
-An 8-bit integer. Represented natively.
-
-=cut
 
 subtype 'xs:unsignedByte' =>
     as 'Int',
         where { $_ <= 255 && $_ >= 0 };
 
-=head2 xs:boolean
-
-    has 'boolean'      => ( is => 'rw', isa => 'xs:boolean' );
-
-A wrapper around built-in Bool.
-
-=cut
 
 subtype 'xs:boolean' =>
     as 'Bool';
 
 
-=head2 xs:float
 
-    has 'float'        => ( is => 'rw', isa => 'xs:float' );
+{
+    my $m = Math::BigFloat->new(2 ** 24);
+    my $min = $m * Math::BigFloat->new(2 ** -149);
+    my $max = $m * Math::BigFloat->new(2 ** 104);
 
-A 64-bit Float. Represented as a L<Math::BigFloat> object, but limited to the
-64-bit (unsigned) range.
+    subtype 'xs:float' =>
+        as 'Math::BigFloat',
+            where { $_->is_nan || $_->is_inf || ( $_ <= $max && $_ >= $min ) };
+    coerce 'xs:float'
+        => from 'Num', via { Math::BigFloat->new($_) }
+        => from 'Str', via { Math::BigFloat->new($_) };
+}
 
-=cut
 
-subtype 'xs:float' =>
-    as 'Math::BigFloat',
-    where { ! $_->is_nan && ! $_->is_inf };
-coerce 'xs:float' => from 'Num', via { Math::BigFloat->new($_) };
+{
+    my $m = Math::BigFloat->new(2 ** 53);
+    my $min = $m * Math::BigFloat->new(2 ** -1075);
+    my $max = $m * Math::BigFloat->new(2 ** 970);
 
-=head2 xs:double
+    subtype 'xs:double' =>
+        as 'Math::BigFloat',
+            where { $_->is_nan || $_->is_inf || ( $_ < $max && $_ > $min ) };
+    coerce 'xs:double'
+        => from 'Num', via { Math::BigFloat->new($_) }
+        => from 'Str', via { Math::BigFloat->new($_) };
+}
 
-    has 'double'       => ( is => 'rw', isa => 'xs:double' );
-
-A 64-bit Float. Represented as a L<Math::BigFloat> object, but limited to the
-64-bit (unsigned) range. Set to coerce from Num.
-
-=cut
-
-subtype 'xs:double' =>
-    as 'Math::BigFloat',
-    where { ! $_->is_nan && ! $_->is_inf };
-coerce 'xs:double' => from 'Num', via { Math::BigFloat->new($_) };
-
-=head2 xs:decimal
-
-    has 'decimal'      => ( is => 'rw', isa => 'xs:decimal' );
-
-A 64-bit Float. Represented as a L<Math::BigFloat> object, but limited to the
-64-bit (unsigned) range. Set to coerce from Num.
-
-=cut
 
 subtype 'xs:decimal' =>
     as 'Math::BigFloat',
     where { ! $_->is_nan && ! $_->is_inf };
-coerce 'xs:decimal' => from 'Num', via { Math::BigFloat->new($_) };
+coerce 'xs:decimal'
+    => from 'Num', via { Math::BigFloat->new($_) }
+    => from 'Str', via { Math::BigFloat->new($_) };
 
 
-=head2 xs:duration
-
-    has 'duration'     => ( is => 'rw', isa => 'xs:duration' );
-    has 'duration_dt'  => ( is => 'rw', isa => 'xs:duration', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime::Duration object.
-
-=cut
 
 subtype 'xs:duration' =>
     as 'Str' =>
@@ -439,15 +240,6 @@ coerce 'xs:duration'
             );
         };
 
-=head2 xs:datetime
-
-    has 'datetime'    => ( is => 'rw', isa => 'xs:dateTime' );
-    has 'datetime_dt' => ( is => 'rw', isa => 'xs:dateTime', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime object.
-
-=cut
 
 
 subtype 'xs:dateTime' =>
@@ -472,15 +264,6 @@ coerce 'xs:dateTime'
         };
 
 
-=head2 xs:time
-
-    has 'time'    => ( is => 'rw', isa => 'xs:time' );
-    has 'time_dt' => ( is => 'rw', isa => 'xs:time', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime object.
-
-=cut
 
 subtype 'xs:time' =>
     as 'Str' =>
@@ -504,15 +287,6 @@ coerce 'xs:time'
         };
 
 
-=head2 xs:date
-
-    has 'date'     => ( is => 'rw', isa => 'xs:date' );
-    has 'date_dt'  => ( is => 'rw', isa => 'xs:date', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime object.
-
-=cut
 
 subtype 'xs:date' =>
     as 'Str' =>
@@ -536,16 +310,6 @@ coerce 'xs:date'
         };
 
 
-=head2 xs:gYearMonth
-
-    has 'gYearMonth'    => ( is => 'rw', isa => 'xs:gYearMonth' );
-    has 'gYearMonth_dt' => ( is => 'rw', isa => 'xs:gYearMonth', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime object or a ArrayRef of two
-integers.
-
-=cut
 
 subtype '__xs:IntPair' =>
     as 'ArrayRef[Int]' =>
@@ -567,15 +331,6 @@ coerce 'xs:gYearMonth'
         };
 
 
-=head2 xs:gYear
-
-    has 'gYear'    => ( is => 'rw', isa => 'xs:gYear' );
-    has 'gYear_dt' => ( is => 'rw', isa => 'xs:gYear', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime object.
-
-=cut
 
 subtype 'xs:gYear' =>
     as 'Str' =>
@@ -588,16 +343,6 @@ coerce 'xs:gYear'
         };
 
 
-=head2 xs:gMonthDay
-
-    has 'gMonthDay'        => ( is => 'rw', isa => 'xs:gMonthDay' );
-    has 'gMonthDay_dt' => ( is => 'rw', isa => 'xs:gMonthDay', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime object or a ArrayRef of two
-integers.
-
-=cut
 
 subtype 'xs:gMonthDay' =>
     as 'Str' =>
@@ -614,15 +359,6 @@ coerce 'xs:gMonthDay'
         };
 
 
-=head2 xs:gDay
-
-    has 'gDay'         => ( is => 'rw', isa => 'xs:gDay' );
-    has 'gDay_dt_int'  => ( is => 'rw', isa => 'xs:gDay', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime object or Int eg. 24.
-
-=cut
 
 subtype 'xs:gDay' =>
     as 'Str' =>
@@ -639,15 +375,6 @@ coerce 'xs:gDay'
         };
 
 
-=head2 xs:gMonth
-
-    has 'gMonth'        => ( is => 'rw', isa => 'xs:gMonth', coerce => 1 );
-    has 'gMonth_dt_int' => ( is => 'rw', isa => 'xs:gMonth', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a DateTime object or Int eg. 10.
-
-=cut
 
 subtype 'xs:gMonth' =>
     as 'Str' =>
@@ -664,16 +391,6 @@ coerce 'xs:gMonth'
         };
 
 
-=head2 xs:base64Binary
-
-    has 'base64Binary'    => ( is => 'rw', isa => 'xs:base64Binary' );
-    has 'base64Binary_io' => ( is => 'rw', isa => 'xs:base64Binary', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a IO::Handle object - the content of the
-file will be encoded to UTF-8 before encoding with base64.
-
-=cut
 
 subtype 'xs:base64Binary' =>
     as 'Str' =>
@@ -688,15 +405,6 @@ coerce 'xs:base64Binary'
         };
 
 
-=head2 xs:anyURI
-
-    has 'anyURI'     => ( is => 'rw', isa => 'xs:anyURI' );
-    has 'anyURI_uri' => ( is => 'rw', isa => 'xs:anyURI', coerce => 1 );
-
-A wrapper around Str.
-If you enable coerce you can pass a URI object.
-
-=cut
 
 subtype 'xs:anyURI' =>
     as 'Str' =>
@@ -708,61 +416,396 @@ coerce 'xs:anyURI'
             return $_->as_string;
         };
 
-
-=head2 xs:nonPositiveInteger
-
-    has 'nonPositiveInteger' => ( is => 'rw', isa => 'xs:nonPositiveInteger' );
-
-A wrapper around built-in Int.
-
-=cut
-
-subtype 'xs:nonPositiveInteger' =>
-    as 'Int' =>
-        where { $_ <= 0 };
-
-
-=head2 xs:negativeInteger
-
-    has 'negativeInteger' => ( is => 'rw', isa => 'xs:negativeInteger' );
-
-A wrapper around built-in Int.
-
-=cut
-
-subtype 'xs:negativeInteger' =>
-    as 'Int' =>
-        where { $_ < 0 };
-
-
-=head2 xs:nonNegativeInteger
-
-    has 'nonNegativeInteger' => ( is => 'rw', isa => 'xs:nonNegativeInteger' );
-
-A wrapper around built-in Int.
-
-=cut
-
-subtype 'xs:nonNegativeInteger' =>
-    as 'Int' =>
-        where { $_ >= 0 };
-
-=head2 xs:positiveInteger
-
-    has 'positiveInteger'    => ( is => 'rw', isa => 'xs:positiveInteger' );
-
-A wrapper around built-in Int.
-
-=cut
-
-subtype 'xs:positiveInteger' =>
-    as 'Int' =>
-        where { $_ > 0 };
-
-
 no Moose::Util::TypeConstraints;
 no Moose;
 
+
+
+1; # End of MooseX::Types::XMLSchema
+
+__END__
+=pod
+
+=encoding utf-8
+
+=head1 NAME
+
+MooseX::Types::XMLSchema - XMLSchema compatible Moose types library
+
+=head1 VERSION
+
+version 0.06
+
+=head1 SYNOPSIS
+
+    package My::Class;
+    use Moose;
+    use MooseX::Types::XMLSchema qw( :all );
+
+    has 'string'       => ( is => 'rw', isa => 'xs:string' );
+
+    has 'boolean'      => ( is => 'rw', isa => 'xs:boolean' );
+
+    has 'byte'         => ( is => 'rw', isa => 'xs:byte' );
+    has 'short'        => ( is => 'rw', isa => 'xs:short' );
+    has 'int'          => ( is => 'rw', isa => 'xs:int' );
+    has 'long'         => ( is => 'rw', isa => 'xs:long', coerce => 1 );
+    has 'integer'      => ( is => 'rw', isa => 'xs:integer', coerce => 1 );
+    has 'float'        => ( is => 'rw', isa => 'xs:float', coerce => 1 );
+    has 'double'       => ( is => 'rw', isa => 'xs:double', coerce => 1 );
+    has 'decimal'      => ( is => 'rw', isa => 'xs:decimal', coerce => 1 );
+
+    has 'duration'     => ( is => 'rw', isa => 'xs:duration', coerce => 1 );
+    has 'datetime'     => ( is => 'rw', isa => 'xs:dateTime', coerce => 1 );
+    has 'time'         => ( is => 'rw', isa => 'xs:time', coerce => 1 );
+    has 'date'         => ( is => 'rw', isa => 'xs:date', coerce => 1 );
+    has 'gYearMonth'   => ( is => 'rw', isa => 'xs:gYearMonth', coerce => 1 );
+    has 'gYear'        => ( is => 'rw', isa => 'xs:gYear', coerce => 1 );
+    has 'gMonthDay'    => ( is => 'rw', isa => 'xs:gMonthDay', coerce => 1 );
+    has 'gDay'         => ( is => 'rw', isa => 'xs:gDay', coerce => 1 );
+    has 'gMonth'       => ( is => 'rw', isa => 'xs:gMonth', coerce => 1 );
+
+    has 'base64Binary' => ( is => 'rw', isa => 'xs:base64Binary', coerce => 1 );
+
+    has 'anyURI'            => ( is => 'rw', isa => 'xs:anyURI', coerce => 1 );
+
+    has 'nonPositiveInteger' => ( is => 'rw', isa => 'xs:nonPositiveInteger', coerce => 1 );
+    has 'positiveInteger'    => ( is => 'rw', isa => 'xs:positiveInteger', coerce => 1 );
+    has 'nonNegativeInteger' => ( is => 'rw', isa => 'xs:nonNegativeInteger', coerce => 1 );
+    has 'negativeInteger'    => ( is => 'rw', isa => 'xs:negativeInteger', coerce => 1 );
+
+    has 'unsignedByte'    => ( is => 'rw', isa => 'xs:unsignedByte' );
+    has 'unsignedShort'   => ( is => 'rw', isa => 'xs:unsignedShort' );
+    has 'unsignedInt'     => ( is => 'rw', isa => 'xs:unsignedInt' );
+    has 'unsignedLong'    => ( is => 'rw', isa => 'xs:unsignedLong', coerce => 1 );
+
+Then, elsewhere:
+
+    my $object = My::Class->new(
+        string          => 'string',
+        decimal         => Math::BigFloat->new(20.12),
+        duration        => DateTime->now - DateTime->(year => 1990),
+        base64Binary    => IO::File->new($0),
+    );
+
+=head1 DESCRIPTION
+
+This class provides a number of XMLSchema compatible types for your Moose
+classes.
+
+=head1 TYPES
+
+=head2 xs:string
+
+    has 'string'       => (
+        is => 'rw',
+        isa => 'xs:string'
+    );
+
+A wrapper around built-in Str.
+
+=head2 xs:integer
+
+    has 'integer'      => (
+        is => 'rw',
+        isa => 'xs:integer',
+        coerce => 1
+    );
+
+A L<Math::BigInt> object. Set to coerce from Int/Str.
+
+This is defined in XSchema to be an arbitrary size integer.
+
+=head2 xs:positiveInteger
+
+    has 'positiveInteger' => (
+        is => 'rw',
+        isa => 'xs:positiveInteger',
+        coerce => 1,
+    );
+
+A L<Math::BigInt> object. Set to coerce from Int/Str.
+
+This is defined in XSchema to be an arbitrary size integer greater than zero.
+
+=head2 xs:nonPositiveInteger
+
+    has 'nonPositiveInteger' => (
+        is => 'rw',
+        isa => 'xs:nonPositiveInteger',
+        coerce => 1,
+    );
+
+A L<Math::BigInt> object. Set to coerce from Int/Str.
+
+This is defined in XSchema to be an arbitrary size integer less than or equal
+to zero.
+
+=head2 xs:negativeInteger
+
+    has 'negativeInteger' => (
+        is => 'rw',
+        isa => 'xs:negativeInteger',
+        coerce => 1,
+    );
+
+A L<Math::BigInt> object. Set to coerce from Int/Str.
+
+This is defined in XSchema to be an arbitrary size integer less than zero.
+
+=head2 xs:nonNegativeInteger
+
+    has 'nonPositiveInteger' => (
+        is => 'rw',
+        isa => 'xs:nonNegativeInteger',
+        coerce => 1,
+    );
+
+A L<Math::BigInt> object. Set to coerce from Int/Str.
+
+This is defined in XSchema to be an arbitrary size integer greater than or
+equal to zero.
+
+=head2 xs:long
+
+    has 'long' => (
+        is => 'rw',
+        isa => 'xs:long',
+        coerce => 1,
+    );
+
+A 64-bit Integer. Represented as a L<Math::Bigint> object, but limited to the
+64-bit (signed) range. Set to coerce from Int/Str.
+
+=head2 xs:unsignedLong
+
+    has 'unsignedLong' => (
+        is => 'rw',
+        isa => 'xs:unsignedLong',
+        coerce => 1,
+    );
+
+A 64-bit Integer. Represented as a L<Math::Bigint> object, but limited to the
+64-bit (unsigned) range. Set to coerce from Int/Str.
+
+=head2 xs:int
+
+    has 'int' => (
+        is => 'rw',
+        isa => 'xs:int'
+    );
+
+A 32-bit integer. Represented natively.
+
+=head2 xs:unsignedInt
+
+    has 'unsignedInt' => (
+        is => 'rw',
+        isa => 'xs:unsignedInt'
+    );
+
+A 32-bit integer. Represented natively.
+
+=head2 xs:short
+
+    has 'short' => (
+        is => 'rw',
+        isa => 'xs:short'
+    );
+
+A 16-bit integer. Represented natively.
+
+=head2 xs:unsignedShort
+
+    has 'unsignedShort' => (
+        is => 'rw',
+        isa => 'xs:unsignedShort'
+    );
+
+A 16-bit integer. Represented natively.
+
+=head2 xs:byte
+
+    has 'byte' => (
+        is => 'rw',
+        isa => 'xs:byte'
+    );
+
+An 8-bit integer. Represented natively.
+
+=head2 xs:unsignedByte
+
+    has 'unsignedByte' => (
+        is => 'rw',
+        isa => 'xs:unsignedByte'
+    );
+
+An 8-bit integer. Represented natively.
+
+=head2 xs:boolean
+
+    has 'boolean' => (
+        is => 'rw',
+        isa => 'xs:boolean'
+    );
+
+A wrapper around built-in Bool.
+
+=head2 xs:float
+
+    has 'float' => (
+        is => 'rw',
+        isa => 'xs:float',
+        coerce => 1,
+    );
+
+A single-precision 32-bit Float. Represented as a L<Math::BigFloat> object, but limited to the
+32-bit range. Set to coerce from Num/Str.
+
+=head2 xs:double
+
+    has 'double' => (
+        is => 'rw',
+        isa => 'xs:double',
+        coerce => 1,
+    );
+
+A double-precision 64-bit Float. Represented as a L<Math::BigFloat> object, but limited to the
+64-bit range. Set to coerce from Num/Str.
+
+=head2 xs:decimal
+
+    has 'decimal' => (
+        is => 'rw',
+        isa => 'xs:decimal',
+        coerce => 1,
+    );
+
+Any base-10 fixed-point number. Represented as a L<Math::BigFloat> object. Set to coerce from Num/Str.
+
+=head2 xs:duration
+
+    has 'duration' => (
+        is => 'rw',
+        isa => 'xs:duration',
+        coerce => 1,
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime::Duration object.
+
+=head2 xs:dateTime
+
+    has 'datetime' => (
+        is => 'rw',
+        isa => 'xs:dateTime',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime object.
+
+=head2 xs:time
+
+    has 'time' => (
+        is => 'rw',
+        isa => 'xs:time',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime object.
+
+=head2 xs:date
+
+    has 'date'  => (
+        is => 'rw',
+        isa => 'xs:date',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime object.
+
+=head2 xs:gYearMonth
+
+    has 'gYearMonth' => (
+        is => 'rw',
+        isa => 'xs:gYearMonth',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime object or a ArrayRef of two
+integers.
+
+=head2 xs:gYear
+
+    has 'gYear' => (
+        is => 'rw',
+        isa => 'xs:gYear',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime object.
+
+=head2 xs:gMonthDay
+
+    has 'gMonthDay' => (
+        is => 'rw',
+        isa => 'xs:gMonthDay',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime object or a ArrayRef of two
+integers.
+
+=head2 xs:gDay
+
+    has 'gDay' => (
+        is => 'rw',
+        isa => 'xs:gDay',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime object or Int eg. 24.
+
+=head2 xs:gMonth
+
+    has 'gMonth' => (
+        is => 'rw',
+        isa => 'xs:gMonth',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a DateTime object or Int eg. 10.
+
+=head2 xs:base64Binary
+
+    has 'base64Binary' => (
+        is => 'rw',
+        isa => 'xs:base64Binary',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a IO::Handle object - the content of the
+file will be encoded to UTF-8 before encoding with base64.
+
+=head2 xs:anyURI
+
+    has 'anyURI' => (
+        is => 'rw',
+        isa => 'xs:anyURI',
+        coerce => 1
+    );
+
+A wrapper around Str.
+If you enable coerce you can pass a URI object.
 
 =head1 SEE ALSO
 
@@ -776,26 +819,14 @@ L<MooseX::AlwaysCoerce>
 
 =head1 AUTHOR
 
-Alex J. G. Burzyński, C<< <ajgb at cpan.org> >>
+Alex J. G. Burzyński <ajgb@cpan.org>
 
-=head1 BUGS
+=head1 COPYRIGHT AND LICENSE
 
-Please report any bugs or feature requests to C<bug-moosex-types-xmlschema at rt.cpan.org>, or through
-the web interface at L<http://rt.cpan.org/NoAuth/ReportBug.html?Queue=MooseX-Types-XMLSchema>.  I will be notified, and then you'll
-automatically be notified of progress on your bug as I make changes.
+This software is copyright (c) 2012 by Alex J. G. Burzyński <ajgb@cpan.org>.
 
-
-=head1 COPYRIGHT & LICENSE
-
-Copyright 2009-2012 Alex J. G. Burzyński.
-
-This program is free software; you can redistribute it and/or modify it
-under the terms of either: the GNU General Public License as published
-by the Free Software Foundation; or the Artistic License.
-
-See http://dev.perl.org/licenses/ for more information.
-
+This is free software; you can redistribute it and/or modify it under
+the same terms as the Perl 5 programming language system itself.
 
 =cut
 
-1; # End of MooseX::Types::XMLSchema
